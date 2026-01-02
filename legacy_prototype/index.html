@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Puzzle Solver Cam</title>
+    <!-- Using Tailwind CSS for basic styling -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Basic styling for video/canvas and result grids */
+        video, canvas {
+            max-width: 100%;
+            border-radius: 8px;
+            transform: scaleX(-1); /* Mirror view for user convenience */
+        }
+        #solution-steps li, #word-search-words li {
+            font-family: monospace; /* Good for code/notations */
+            margin-bottom: 2px;
+        }
+        /* Styling for Sudoku Grid Display */
+        .sudoku-grid {
+             display: grid;
+             grid-template-columns: repeat(9, minmax(0, 1fr));
+             gap: 1px; /* Thinner gap */
+             font-family: monospace;
+             margin: 5px auto;
+             max-width: 250px; /* Adjust size */
+             border: 2px solid #333; /* Thicker border */
+             background-color: #ccc; /* Background for gaps */
+             aspect-ratio: 1 / 1; /* Ensure overall square */
+        }
+         .sudoku-grid div {
+             background-color: white;
+             text-align: center;
+             aspect-ratio: 1 / 1; /* Make cells square */
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-size: 1em; /* Adjust font size */
+             font-weight: bold;
+         }
+        .sudoku-grid div.solved { /* Style for newly solved cells */
+            color: blue;
+        }
+        #detected-state {
+            word-break: break-all; /* Wrap long strings */
+        }
+        pre { /* Styling for WordSearch grid */
+            white-space: pre;
+            font-family: monospace;
+            line-height: 1.2;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center min-h-screen p-4">
+
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Multi-Puzzle Solver Cam</h1>
+
+    <!-- Camera and Controls Section -->
+    <div class="w-full max-w-xl bg-white p-6 rounded-lg shadow-lg mb-6">
+        <!-- Game Selection -->
+        <label for="game-select" class="block text-sm font-medium text-gray-700 mb-1">Select Puzzle Type:</label>
+        <select id="game-select" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring-blue-500 focus:border-blue-500">
+            <option value="rubiks">Rubik's Cube</option>
+            <option value="sudoku">Sudoku</option>
+            <option value="wordsearch">Word Search</option>
+            <!-- <option value="crossword">Crossword (Coming Soon)</option> -->
+        </select>
+
+        <!-- Video Feed and Overlay -->
+        <div class="relative mb-4 aspect-w-4 aspect-h-3 bg-black rounded-lg overflow-hidden">
+            <video id="video-feed" autoplay playsinline class="w-full h-full object-cover"></video>
+            <canvas id="overlay-canvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex flex-col sm:flex-row justify-center sm:space-x-4 space-y-2 sm:space-y-0 mb-4">
+            <button id="start-scan-btn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded transition duration-150 shadow">
+                Start Camera
+            </button>
+            <button id="capture-solve-btn" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-5 rounded transition duration-150 shadow" disabled>
+                Capture & Analyze
+            </button>
+        </div>
+
+        <!-- Status and Instructions -->
+         <div id="status" class="text-center text-gray-700 mb-2 font-medium">Status: Idle</div>
+         <p id="instructions" class="text-sm text-gray-500 text-center">Select a puzzle and start the camera.</p>
+    </div>
+
+    <!-- Detected State and Solution Section -->
+     <div class="w-full max-w-xl bg-white p-6 rounded-lg shadow-lg">
+         <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Detected State / Solution</h2>
+
+         <!-- Detected State Area -->
+         <div id="detected-state-area" class="mb-6">
+             <h3 class="font-medium text-gray-600 mb-2">Detected State:</h3>
+             <div id="detected-state" class="p-3 border border-dashed border-gray-400 rounded min-h-[60px] bg-gray-50 text-sm">
+                 <p id="detected-state-placeholder">Scan the puzzle first...</p>
+                 <!-- Specific display areas, shown/hidden by JS -->
+                 <div id="detected-state-rubiks" class="hidden"> Rubiks State: <span id="rubiks-string" class="font-mono"></span></div>
+                 <div id="detected-state-sudoku" class="hidden">
+                     Detected Grid:
+                     <div id="detected-state-sudoku-grid" class="sudoku-grid">
+                         <!-- 81 divs will be generated here by JS -->
+                     </div>
+                 </div>
+                 <div id="detected-state-wordsearch" class="hidden">
+                     Detected Grid:<pre id="wordsearch-grid" class="text-xs bg-white p-2 border rounded mt-1"></pre>
+                     Detected Words:<ul id="wordsearch-words" class="list-disc list-inside mt-1 text-xs"></ul>
+                 </div>
+             </div>
+         </div>
+
+         <!-- Solution Area -->
+         <div id="solution-area">
+             <h3 class="font-medium text-gray-600 mb-2">Solution / Result:</h3>
+              <div id="solution" class="p-3 border border-gray-300 rounded min-h-[60px] bg-gray-50">
+                  <p id="solution-placeholder">Solution steps or result will appear here.</p>
+                 <!-- Specific display areas, shown/hidden by JS -->
+                 <ul id="solution-steps-rubiks" class="list-decimal list-inside text-gray-700 mt-1 max-h-48 overflow-y-auto hidden"></ul>
+                 <div id="solution-sudoku" class="hidden">
+                      Solved Grid:
+                     <div id="solution-sudoku-grid" class="sudoku-grid">
+                          <!-- 81 divs will be generated here by JS -->
+                     </div>
+                 </div>
+                  <div id="solution-wordsearch" class="hidden">
+                      Found Words: <span id="found-word-count">0</span>
+                      <ul id="solution-wordsearch-found" class="list-disc list-inside mt-1 text-xs max-h-40 overflow-y-auto"></ul>
+                      <p class="text-xs mt-2">(Highlighting on canvas TBD)</p>
+                  </div>
+              </div>
+         </div>
+     </div>
+
+    <!-- !!! IMPORTANT Libraries - Add these later !!! -->
+    <!-- CV Libraries (OpenCV.js, TensorFlow.js, Tesseract.js) -->
+    <!-- Solver Libraries (Rubik's, Sudoku, WordSearch) -->
+<!-- Add these BEFORE script.js -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script> 
+<script async src="path/to/opencv.js" onload="onOpenCvReady();"></script> <!-- Load OpenCV.js -->
+<script src="js/sudoku_solver.js"></script> 
+
+<!-- Your main script -->
+<script src="script.js"></script>
+    
+</body>
+</html>
+

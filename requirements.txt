@@ -1,0 +1,6 @@
+opencv-python
+numpy
+kociemba
+fastapi
+uvicorn
+python-multipart
