@@ -77,7 +77,7 @@ function App() {
           </main>
 
           <footer style={{ marginTop: 'auto', padding: '20px', color: '#4b5563', fontSize: '0.9rem' }}>
-            © 2025 Antigravity AI
+            Puzzle Vision — camera + ML helpers
           </footer>
         </>
       )}

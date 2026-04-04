@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { api } from '../api';
 
 const darkCardStyle = {
     backgroundColor: '#1f2937', color: '#f3f4f6', padding: '20px', borderRadius: '16px',
@@ -83,12 +83,12 @@ export default function SudokuSolver({ onBack }) {
     const handleSolve = async () => {
         setStatus("Solving...");
         try {
-            const res = await axios.post('http://localhost:8000/solve-sudoku', { board });
+            const res = await api.post('/solve-sudoku', { board });
             if (res.data.success) {
                 setBoard(res.data.solution);
                 setStatus("Solved!");
             } else {
-                setStatus("Unsolvable Board!");
+                setStatus(res.data.error || "Unsolvable board");
             }
         } catch (e) {
             setStatus("Error: " + e.message);
@@ -110,7 +110,7 @@ export default function SudokuSolver({ onBack }) {
             const formData = new FormData();
             formData.append('file', file);
 
-            const res = await axios.post('http://localhost:8000/extract-sudoku', formData);
+            const res = await api.post('/extract-sudoku', formData);
             if (res.data.success) {
                 setBoard(res.data.board);
                 // Set mask for non-zero items

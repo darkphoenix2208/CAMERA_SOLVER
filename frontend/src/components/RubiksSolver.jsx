@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Webcam from 'react-webcam';
-import axios from 'axios';
+import { api } from '../api';
 
 // --- Styles ---
 // Using a dark theme palette
@@ -46,7 +46,7 @@ export default function RubiksSolver({ onBack }) {
         try {
             const formData = new FormData();
             formData.append('file', blob, 'img.jpg');
-            const res = await axios.post('http://localhost:8000/detect-face', formData);
+            const res = await api.post('/detect-face', formData);
 
             if (res.data.success) {
                 setProcessedImage(res.data.image);
@@ -70,7 +70,7 @@ export default function RubiksSolver({ onBack }) {
         setStatus("Solving...");
         try {
             const payload = { faces: scannedData };
-            const res = await axios.post('http://localhost:8000/solve', payload);
+            const res = await api.post('/solve', payload);
 
             if (res.data.success) {
                 setSolution(res.data.solution);

@@ -1,6 +1,9 @@
 opencv-python
 numpy
-kociemba
+scipy
+scikit-learn
+imutils
+pytesseract
 fastapi
 uvicorn
 python-multipart

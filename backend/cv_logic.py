@@ -1,4 +1,9 @@
-    # ... (previous code) ...
+"""
+OpenCV-based Rubik's cube face detection and per-sticker color sampling.
+"""
+import cv2
+import numpy as np
+
 
 def get_color_name(hsv_pixel):
     """
