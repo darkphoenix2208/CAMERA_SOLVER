@@ -16,7 +16,4 @@ services:
     staticPublishPath: "./frontend/dist"
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: puzzle-vision-backend
-          property: host
+        value: https://puzzle-vision-backend.onrender.com
