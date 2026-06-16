@@ -64,6 +64,12 @@ def detect_cube_face(image, ambient_white=None):
     Analyzes an image frame to detect a 3x3 Rubik's Cube face.
     Optionally accepts an ambient_white HSV array for better color accuracy.
     """
+    # Downscale for performance if image is huge
+    h, w = image.shape[:2]
+    if max(h, w) > 1200:
+        scale = 1200 / max(h, w)
+        image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
     output_img = image.copy()
     hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     

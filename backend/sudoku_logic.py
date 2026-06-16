@@ -417,6 +417,12 @@ def extract_grid_from_image(image_bytes):
     if image is None:
         raise Exception("Invalid image data")
 
+    # Downscale for performance if image is huge (e.g. smartphone photo)
+    h, w = image.shape[:2]
+    if max(h, w) > 1200:
+        scale = 1200 / max(h, w)
+        image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
     # 1. Find and warp the puzzle grid
     warped, _contour = find_puzzle(image)
 
