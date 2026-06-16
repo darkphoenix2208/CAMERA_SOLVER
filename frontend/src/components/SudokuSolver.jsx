@@ -136,13 +136,7 @@ export default function SudokuSolver({ onBack }) {
                 const conf = res.data.confidence || 0;
                 setConfidence(conf);
                 
-                // Check if board has at least some clues (e.g. 10 clues)
                 const clues = detectedBoard.flat().filter(d => d !== 0).length;
-                if (clues < 10) {
-                    setStatus(`Align Sudoku in view... (${Math.round(conf * 100)}% confidence)`);
-                    setCorners(null);
-                    return;
-                }
 
                 setStatus(`Detected ${clues} clues. Solving...`);
                 
