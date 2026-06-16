@@ -50,23 +50,32 @@ export default function RubiksSolver({ onBack }) {
 
     // Continuous Scanning Loop
     useEffect(() => {
-        if (mode === 'camera' && !faceLocked && (currentStep === 'calibrate' || (currentStep >= 0 && currentStep < 6))) {
-            scanInterval.current = setInterval(async () => {
-                if (webcamRef.current) {
-                    const src = webcamRef.current.getScreenshot();
-                    if (src) {
-                        try {
-                            const blob = await (await fetch(src)).blob();
-                            await processBlob(blob);
-                        } catch (e) {
-                            console.error(e);
-                        }
+        let active = true;
+        const scanLoop = async () => {
+            if (!active) return;
+            if (webcamRef.current) {
+                const src = webcamRef.current.getScreenshot();
+                if (src) {
+                    try {
+                        const blob = await (await fetch(src)).blob();
+                        await processBlob(blob);
+                    } catch (e) {
+                        console.error(e);
                     }
                 }
-            }, 500);
+            }
+            if (active) {
+                scanInterval.current = setTimeout(scanLoop, 500);
+            }
+        };
+
+        if (mode === 'camera' && !faceLocked && (currentStep === 'calibrate' || (currentStep >= 0 && currentStep < 6))) {
+            scanLoop();
         }
+        
         return () => {
-            if (scanInterval.current) clearInterval(scanInterval.current);
+            active = false;
+            if (scanInterval.current) clearTimeout(scanInterval.current);
         };
     }, [mode, currentStep, faceLocked, ambientWhite]);
 

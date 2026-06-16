@@ -33,22 +33,32 @@ export default function SudokuSolver({ onBack }) {
     const scanInterval = useRef(null);
 
     useEffect(() => {
-        if (mode === 'camera' && isScanning) {
-            scanInterval.current = setInterval(async () => {
-                if (webcamRef.current) {
-                    const src = webcamRef.current.getScreenshot();
-                    if (src) {
-                        try {
-                            const blob = await (await fetch(src)).blob();
-                            await processFrame(blob);
-                        } catch (e) {
-                            console.error(e);
-                        }
+        let active = true;
+        const scanLoop = async () => {
+            if (!active) return;
+            if (webcamRef.current) {
+                const src = webcamRef.current.getScreenshot();
+                if (src) {
+                    try {
+                        const blob = await (await fetch(src)).blob();
+                        await processFrame(blob);
+                    } catch (e) {
+                        console.error(e);
                     }
                 }
-            }, 600);
+            }
+            if (active) {
+                scanInterval.current = setTimeout(scanLoop, 600);
+            }
+        };
+
+        if (mode === 'camera' && isScanning) {
+            scanLoop();
         }
-        return () => clearInterval(scanInterval.current);
+        return () => {
+            active = false;
+            if (scanInterval.current) clearTimeout(scanInterval.current);
+        };
     }, [mode, isScanning]);
 
     // AR Draw Effect
