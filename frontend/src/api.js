@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-let baseURL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-if (baseURL && !baseURL.startsWith('http')) {
-    baseURL = `https://${baseURL}`;
-}
+// Hardcode the production backend URL for Render static deployments
+const isDev = import.meta.env.DEV;
+const baseURL = isDev ? 'http://127.0.0.1:8000' : 'https://puzzle-vision-backend.onrender.com';
 
 export const api = axios.create({ baseURL });
