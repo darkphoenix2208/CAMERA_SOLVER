@@ -18,4 +18,4 @@ services:
         fromService:
           type: web
           name: puzzle-vision-backend
-          property: url
+          property: host
