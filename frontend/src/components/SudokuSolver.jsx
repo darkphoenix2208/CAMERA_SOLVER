@@ -141,23 +141,37 @@ export default function SudokuSolver({ onBack }) {
                 setStatus(`Detected ${clues} clues. Solving...`);
                 
                 // Immediately solve
-                const solveRes = await api.post('/solve-sudoku', { board: detectedBoard });
-                if (solveRes.data.success) {
-                    setBoard(detectedBoard);
-                    setSolution(solveRes.data.solution);
-                    setCorners(detCorners);
-                    setSolveTimeMs(solveRes.data.solve_time_ms);
-                    setStatus("✅ Solved! AR Overlay active.");
-                } else {
-                    setStatus("Detected, but unsolvable.");
-                    setCorners(null);
+                try {
+                    console.log("Initiating /solve-sudoku POST with board:", detectedBoard);
+                    const solveRes = await api.post('/solve-sudoku', { board: detectedBoard });
+                    console.log("Received /solve-sudoku response:", solveRes);
+                    if (solveRes.data.success) {
+                        setBoard(detectedBoard);
+                        setSolution(solveRes.data.solution);
+                        setCorners(detCorners);
+                        setSolveTimeMs(solveRes.data.solve_time_ms);
+                        setStatus("✅ Solved! AR Overlay active.");
+                    } else {
+                        setStatus("Detected, but unsolvable.");
+                        setCorners(null);
+                    }
+                } catch (solveErr) {
+                    console.error("AXIOS ERROR IN /solve-sudoku POST:", solveErr);
+                    if (solveErr.response) {
+                        console.error("Response data:", solveErr.response.data);
+                        console.error("Response status:", solveErr.response.status);
+                    } else if (solveErr.request) {
+                        console.error("No response received. Request was:", solveErr.request);
+                    } else {
+                        console.error("Error setting up request:", solveErr.message);
+                    }
                 }
             } else {
                 setStatus("Align Sudoku in view...");
                 setCorners(null);
             }
         } catch (e) {
-            console.error(e);
+            console.error("AXIOS ERROR IN /extract-sudoku POST:", e);
         }
     };
 
