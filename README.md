@@ -1,92 +1,61 @@
-<div align="center">
-  <img src="https://img.icons8.com/color/120/000000/rubiks-cube.png" alt="Rubik's Cube" width="80" />
-  <img src="https://img.icons8.com/color/120/000000/sudoku.png" alt="Sudoku" width="80" />
+# Puzzle Vision 🧩🎲
 
-  <h1>Camera Solver</h1>
-  
-  <p>
-    An intelligent, full-stack <strong>Computer Vision application</strong> that automatically extracts and solves visual puzzles like Sudoku boards and Rubik's Cubes straight from your camera.
-  </p>
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![OpenCV](https://img.shields.io/badge/opencv-%23white.svg?style=for-the-badge&logo=opencv&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
-  <div>
-    <img src="https://img.shields.io/badge/Frontend-React%20%2B%20Vite-blue?style=for-the-badge&logo=react" alt="Frontend" />
-    <img src="https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi" alt="Backend" />
-    <img src="https://img.shields.io/badge/Vision-OpenCV-green?style=for-the-badge&logo=opencv" alt="OpenCV" />
-    <img src="https://img.shields.io/badge/ML-Scikit--Learn-orange?style=for-the-badge&logo=scikit-learn" alt="Scikit-Learn" />
-  </div>
-</div>
+An AI-powered Augmented Reality solver suite for physical puzzles like Sudoku and Rubik's Cubes, built as a full-stack progressive web application.
 
-<br/>
+## Why this project?
 
-## 🌟 Features
+I built **Puzzle Vision** to showcase my ability to seamlessly integrate modern web technologies (React/Vite) with complex backend algorithms and computer vision pipelines (FastAPI/OpenCV). This project solves a real-world problem—bridging the gap between physical objects and digital algorithms—and demonstrates my proficiency in system design, machine learning, and full-stack development.
 
-### 🧩 Sudoku OCR & Solver
-- **Universal Background Extraction**: Capable of reading puzzles from both physical paper (light backgrounds) and digital screenshots (dark UI themes).
-- **Robust Digit Recognition**: Uses a custom-trained multi-layer perceptron (MLP) neural network trained on over 3000 synthetic font variations to distinguish difficult numbers (like serif `1` vs `3` or `7`).
-- **Precision Grid Warping**: Automatically finds the Sudoku boundary and uses a 4-point perspective transform to "flatten" skewed camera angles.
-- **Lightning-fast Backtracking**: Solves the extracted matrix instantaneously and projects it back to the beautiful dark-themed UI.
+## Features
 
-### 🎲 Rubik's Cube Scanner & Solver
-- **Real-Time Camera Integration**: Capture cube faces right from your laptop or phone camera.
-- **Dynamic HSV Color Processing**: Extracts color channels, intelligently grouping light artifacts and shadows into standard Rubik's notation (W, Y, R, O, G, B).
-- **Kociemba Algorithm Integration**: Solves any valid scrambled 3x3 Rubik's cube configuration in 24 moves or less.
-- **Interactive Move Playback**: Provides an easy-to-read sequence of moves (e.g. `R`, `U'`, `F2`) required to solve the cube.
+- 📸 **AR Camera Integration:** Real-time continuous scanning from any mobile or desktop webcam.
+- 🧩 **Sudoku AR Overlay:** Uses contour detection, a custom Neural Network (MLP), and backtracking to instantly solve and project missing digits right back onto the physical board.
+- 🎲 **Rubik's Cube 3D Solver:** Scans face colors under varying lighting conditions with HSV calibration, generates a Kociemba algorithm solution, and animates it on a 3D Canvas using Three.js.
+- ⚡ **Benchmarking & Confidence Scoring:** Real-time metrics showing solve times (often <20ms) and OCR confidence percentages.
+- 📱 **Progressive Web App (PWA):** Fully responsive mobile-first UI with offline capabilities.
 
----
+## Tech Stack
 
-## 🛠️ Architecture
+**Frontend:**
+- React 18 & Vite
+- @react-three/fiber & @react-three/drei for 3D rendering
+- react-webcam for video capture
 
-Camera Solver is divided into a robust Python backend and a responsive Javascript frontend.
+**Backend:**
+- FastAPI & Uvicorn
+- OpenCV & NumPy for image processing
+- scikit-learn for custom digit recognition ML model
+- Kociemba for optimal Rubik's Cube solving
 
-- **Backend (`/backend`)**: Built with **FastAPI**. It handles all the heavy lifting, including:
-  - OpenCV image processing (Canny edge detection, Contour grouping, perspective transforms)
-  - Sklearn digit classification pipeline
-  - Algorithmic solvers for Sudoku (Backtracking) and Kociemba algorithms for the Rubik's Cube.
-- **Frontend (`/frontend`)**: Built with **React** & **Vite**. Offers a sleek, responsive, dark-mode focused UI. It handles webcam feeds, image uploads, and rendering the solutions nicely.
+**DevOps & Testing:**
+- Pytest & HTTPX for integration testing
+- GitHub Actions for CI/CD
+- Dockerized backend
 
----
+## Setup Guide
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.9+
-- Node.js 18+
-
-### 1. Start the Backend server
+### 1. Backend (Python/FastAPI)
 
 ```bash
 cd backend
-pip install -r ../requirements.txt 
+python -m venv venv
+source venv/bin/activate  # Or `venv\Scripts\activate` on Windows
+pip install -r requirements.txt
 python main.py
 ```
-> *The backend will start running on port `8000`*
+*Note: Ensure Tesseract OCR and libgl1-mesa-glx are installed on your system if running outside Docker.*
 
-### 2. Start the Frontend client
+### 2. Frontend (React/Vite)
 
-Open a new terminal window:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-> *The frontend will start running on port `5173`*
 
-Navigate to `http://localhost:5173` in your browser to start solving!
-
----
-
-## 🧠 Under the Hood (Computer Vision)
-
-**Sudoku Extraction Pipeline:**
-1. **Gaussian Blur & Adaptive Thresholding** to highlight strong edges while ignoring lighting gradients.
-2. **Contour Extraction & Area verification** to isolate the 9x9 parent grid.
-3. **Four-Point Perspective Transform** to normalize the skewed rectangle into a perfect top-down view.
-4. **Cell Iteration & Aggressive Margin Cropping** inside each of the 81 cells to surgically remove grid-lines.
-5. **Shape Analysis (Aspect Ratio, Area metrics)** to filter out pencil-marks, dirt, or lighting noise.
-6. **ML Classification** of bounding boxes using our custom `digit_ml.py` neural network.
-
----
-
-<div align="center">
-  <i>Built to make solving puzzles magical with the power of Machine Learning.</i>
-</div>
+The React app will proxy API requests to `http://localhost:8000`. Open `http://localhost:5173` to view the app!

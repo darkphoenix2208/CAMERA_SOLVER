@@ -294,6 +294,28 @@ def _fix_3_vs_1(pred: int, ar: float, second: tuple[int, float]) -> int:
         return 3
     return pred
 
+def _fix_3_vs_8(pred: int, roi: np.ndarray, second: tuple[int, float]) -> int:
+    """8 has a higher pixel density (closed loops) compared to 3."""
+    d2, p2 = second
+    if pred in (3, 8) and p2 > 0.15:
+        density = np.count_nonzero(roi > 127) / max(roi.size, 1)
+        if pred == 3 and d2 == 8 and density > 0.38:
+            return 8
+        if pred == 8 and d2 == 3 and density < 0.31:
+            return 3
+    return pred
+
+def _fix_5_vs_6(pred: int, roi: np.ndarray, second: tuple[int, float]) -> int:
+    """6 usually has a closed bottom loop making it overall denser than 5."""
+    d2, p2 = second
+    if pred in (5, 6) and p2 > 0.15:
+        density = np.count_nonzero(roi > 127) / max(roi.size, 1)
+        if pred == 5 and d2 == 6 and density > 0.39:
+            return 6
+        if pred == 6 and d2 == 5 and density < 0.32:
+            return 5
+    return pred
+
 
 # ---------------------------------------------------------------------------
 # 3.  OCR HELPERS
@@ -321,27 +343,28 @@ def _tesseract_digit(ocr_img: np.ndarray) -> int:
 def extract_digit(cell):
     """
     Extract a single digit from a cell image.
-    Returns 0 for empty cells, 1-9 for detected digits.
+    Returns (digit, prob) where prob is a confidence score.
+    Returns (0, 1.0) for empty cells.
     """
     if cell.size == 0:
-        return 0
+        return 0, 1.0
 
     gray = cell if len(cell.shape) == 2 else cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
 
     # Quick empty-cell filter
     if _likely_empty_cell(gray):
-        return 0
+        return 0, 1.0
 
     # Binarize & find digit contour (strict filtering already applied)
     th, contour = _binarize_for_ocr(gray)
     if contour is None:
-        return 0                           # no digit-shaped blob → empty
+        return 0, 1.0                           # no digit-shaped blob → empty
 
     # Extra height gate
     H, W = gray.shape[:2]
     _, _, _, ch = cv2.boundingRect(contour)
     if ch < H * 0.28:
-        return 0
+        return 0, 1.0
 
     # ── ML prediction (primary path) ──
     ml_roi = _crop_for_ml(gray, contour)
@@ -353,19 +376,21 @@ def extract_digit(cell):
         (a, pa), (b, pb) = predict_digit_top2(ml_roi)
 
         if pa < 0.45:
-            return 0
+            return 0, 1.0
         if not (1 <= a <= 9):
-            return 0
+            return 0, 1.0
 
         pred = _fix_7_vs_1(int(a), ar, (int(b), float(pb)))
         pred = _fix_3_vs_1(pred, ar, (int(b), float(pb)))
         pred = _fix_narrow_digit(pred, ar)
+        pred = _fix_3_vs_8(pred, ml_roi, (int(b), float(pb)))
+        pred = _fix_5_vs_6(pred, ml_roi, (int(b), float(pb)))
 
         # Low-confidence 7/1 ambiguity → bail
         if pred in (7, 1) and pa < 0.50 and (pa - pb) < 0.08:
-            return 0
+            return 0, 1.0
 
-        return pred
+        return pred, float(pa)
     except Exception:
         pass
 
@@ -376,7 +401,8 @@ def extract_digit(cell):
     ocr_in = cv2.bitwise_not(digit_bin)
     ocr_in = cv2.resize(ocr_in, (32, 32), interpolation=cv2.INTER_AREA)
     ocr_in = cv2.copyMakeBorder(ocr_in, 6, 6, 6, 6, cv2.BORDER_CONSTANT, value=255)
-    return _tesseract_digit(ocr_in)
+    res = _tesseract_digit(ocr_in)
+    return res, 0.4 if res != 0 else 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -403,6 +429,9 @@ def extract_grid_from_image(image_bytes):
     margin = 13                # removes ~13 px of grid-line on every edge
 
     board = []
+    total_non_empty = 0
+    clean_non_empty = 0
+
     for y in range(9):
         row = []
         for x in range(9):
@@ -412,8 +441,13 @@ def extract_grid_from_image(image_bytes):
             ex = (x + 1) * step - margin
 
             cell = warped[sy:ey, sx:ex]
-            digit = extract_digit(cell)
+            digit, prob = extract_digit(cell)
             row.append(digit)
+            if digit != 0:
+                total_non_empty += 1
+                if prob >= 0.70:
+                    clean_non_empty += 1
         board.append(row)
 
-    return board
+    confidence = float(clean_non_empty / total_non_empty) if total_non_empty > 0 else 0.0
+    return board, _contour.tolist() if _contour is not None else None, confidence

@@ -28,7 +28,7 @@ def _augment(canvas: np.ndarray) -> np.ndarray:
     return canvas
 
 
-def _build_training_data(rng: np.random.Generator, n_per_digit: int = 350):
+def _build_training_data(rng: np.random.Generator, n_per_digit: int = 500):
     """Generate synthetic training digits for both dark and light backgrounds."""
     X_list = []
     y_list = []
@@ -93,8 +93,8 @@ def _get_classifier():
         rng = np.random.default_rng(42)
         X, y = _build_training_data(rng)
         _clf = MLPClassifier(
-            hidden_layer_sizes=(128, 64),
-            max_iter=600,
+            hidden_layer_sizes=(256, 128),
+            max_iter=800,
             random_state=42,
             early_stopping=True,
             validation_fraction=0.15,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import RubiksSolver from './components/RubiksSolver';
 import SudokuSolver from './components/SudokuSolver';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // --- Global App Layout ---
 const appStyle = {
@@ -40,60 +41,64 @@ function App() {
   const [view, setView] = useState('home'); // 'home', 'rubiks', 'sudoku'
 
   return (
-    <div style={appStyle}>
-      {view === 'home' && (
-        <>
-          <header style={headerStyle}>
-            <h1 style={titleStyle}>Puzzle Vision</h1>
-            <p style={{ color: '#9ca3af', fontSize: '1.2rem' }}>AI-Powered AR Solver Suite</p>
-          </header>
+    <ErrorBoundary>
+        <div style={appStyle}>
+          {view === 'home' && (
+            <>
+              <header style={headerStyle}>
+                <h1 className="app-title" style={titleStyle}>Puzzle Vision</h1>
+                <p style={{ color: '#9ca3af', fontSize: '1.2rem' }}>AI-Powered AR Solver Suite</p>
+              </header>
 
-          <main style={gridStyle}>
-            {/* Rubik's Card */}
-            <div
-              style={cardButtonStyle}
-              onClick={() => setView('rubiks')}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(59, 130, 246, 0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)'; }}
-            >
-              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🎲</div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '10px', color: '#fff' }}>Rubik's Cube</h2>
-              <p style={{ color: '#9ca3af', textAlign: 'center' }}>Scan faces, detect colors, and get a step-by-step 3D solution.</p>
-              <div style={{ marginTop: '20px', color: '#60a5fa', fontWeight: 'bold' }}>Launch Solver →</div>
+              <main style={gridStyle}>
+                {/* Rubik's Card */}
+                <div
+                  className="card-button"
+                  style={cardButtonStyle}
+                  onClick={() => setView('rubiks')}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(59, 130, 246, 0.2)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)'; }}
+                >
+                  <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🎲</div>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '10px', color: '#fff' }}>Rubik's Cube</h2>
+                  <p style={{ color: '#9ca3af', textAlign: 'center' }}>Scan faces, detect colors, and get a step-by-step 3D solution.</p>
+                  <div style={{ marginTop: '20px', color: '#60a5fa', fontWeight: 'bold' }}>Launch Solver →</div>
+                </div>
+
+                {/* Sudoku Card */}
+                <div
+                  className="card-button"
+                  style={cardButtonStyle}
+                  onClick={() => setView('sudoku')}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(244, 114, 182, 0.2)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)'; }}
+                >
+                  <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🧩</div>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '10px', color: '#fff' }}>Sudoku</h2>
+                  <p style={{ color: '#9ca3af', textAlign: 'center' }}>Instant digit recognition and solving overlay for any grid.</p>
+                  <div style={{ marginTop: '20px', color: '#f472b6', fontWeight: 'bold' }}>Launch Solver →</div>
+                </div>
+              </main>
+
+              <footer style={{ marginTop: 'auto', padding: '20px', color: '#4b5563', fontSize: '0.9rem' }}>
+                Puzzle Vision — camera + ML helpers
+              </footer>
+            </>
+          )}
+
+          {view === 'rubiks' && (
+            <div style={{ padding: '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <RubiksSolver onBack={() => setView('home')} />
             </div>
+          )}
 
-            {/* Sudoku Card */}
-            <div
-              style={cardButtonStyle}
-              onClick={() => setView('sudoku')}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(244, 114, 182, 0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)'; }}
-            >
-              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🧩</div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '10px', color: '#fff' }}>Sudoku</h2>
-              <p style={{ color: '#9ca3af', textAlign: 'center' }}>Instant digit recognition and solving overlay for any grid.</p>
-              <div style={{ marginTop: '20px', color: '#f472b6', fontWeight: 'bold' }}>Launch Solver →</div>
+          {view === 'sudoku' && (
+            <div style={{ padding: '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <SudokuSolver onBack={() => setView('home')} />
             </div>
-          </main>
-
-          <footer style={{ marginTop: 'auto', padding: '20px', color: '#4b5563', fontSize: '0.9rem' }}>
-            Puzzle Vision — camera + ML helpers
-          </footer>
-        </>
-      )}
-
-      {view === 'rubiks' && (
-        <div style={{ padding: '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-          <RubiksSolver onBack={() => setView('home')} />
+          )}
         </div>
-      )}
-
-      {view === 'sudoku' && (
-        <div style={{ padding: '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-          <SudokuSolver onBack={() => setView('home')} />
-        </div>
-      )}
-    </div>
+    </ErrorBoundary>
   );
 }
 

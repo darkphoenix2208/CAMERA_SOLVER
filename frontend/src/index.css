@@ -30,3 +30,20 @@ body {
 button {
   font-family: inherit;
 }
+
+/* Mobile Responsive Overrides */
+@media screen and (max-width: 480px) {
+  .app-title { font-size: 2.2rem !important; }
+  .card-button { padding: 20px !important; }
+  .solver-card { padding: 12px !important; border-radius: 12px !important; }
+  .header-text { font-size: 1.25rem !important; }
+  .btn-back { font-size: 1.2rem !important; }
+  .guide-box { aspect-ratio: 1 / 1 !important; border-radius: 8px !important; }
+  .color-cell { width: 35px !important; height: 35px !important; font-size: 0.9rem !important; }
+  .cube-container { height: 300px !important; }
+  .sudoku-cell { width: 26px !important; height: 26px !important; font-size: 1rem !important; }
+  .btn-primary { padding: 10px 20px !important; font-size: 1rem !important; }
+  .btn-next { padding: 10px 20px !important; font-size: 1rem !important; }
+  .btn-secondary { padding: 10px 15px !important; font-size: 0.9rem !important; }
+  .btn-toggle { padding: 6px 12px !important; font-size: 0.9rem !important; }
+}
