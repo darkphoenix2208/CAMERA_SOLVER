@@ -88,25 +88,26 @@ def _get_classifier():
     if _clf is not None:
         return _clf
 
+    import os
+    import joblib
+    
+    model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "digit_model.pkl")
+    if os.path.exists(model_path):
+        try:
+            _clf = joblib.load(model_path)
+            return _clf
+        except Exception as e:
+            print(f"Error loading model: {e}")
+
     try:
-        from sklearn.neural_network import MLPClassifier
-        rng = np.random.default_rng(42)
-        X, y = _build_training_data(rng)
-        _clf = MLPClassifier(
-            hidden_layer_sizes=(256, 128),
-            max_iter=800,
-            random_state=42,
-            early_stopping=True,
-            validation_fraction=0.15,
-        )
-        _clf.fit(X, y)
-    except ImportError:
-        # Fallback to LogisticRegression if MLP unavailable
+        # Fallback to LogisticRegression with fewer samples if model missing
         from sklearn.linear_model import LogisticRegression
         rng = np.random.default_rng(42)
-        X, y = _build_training_data(rng)
-        _clf = LogisticRegression(max_iter=3000, C=1.0, random_state=42)
+        X, y = _build_training_data(rng, n_per_digit=100)
+        _clf = LogisticRegression(max_iter=1000, C=1.0, random_state=42)
         _clf.fit(X, y)
+    except Exception:
+        pass
 
     return _clf
 
