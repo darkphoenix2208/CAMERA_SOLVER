@@ -3,7 +3,7 @@ uvicorn
 python-multipart
 opencv-python-headless
 numpy
-scikit-learn
+scikit-learn==1.8.0
 kociemba
 pytesseract
 pytest

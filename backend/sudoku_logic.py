@@ -72,52 +72,80 @@ except ImportError:
 # 1.  FIND THE PUZZLE GRID
 # ---------------------------------------------------------------------------
 
-def find_puzzle(image):
+def find_puzzle(image, rotation_retry=False):
     """Locate the largest square-ish contour — the Sudoku grid outline."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (7, 7), 3)
+    
+    def prep_standard(img):
+        blurred = cv2.GaussianBlur(img, (7, 7), 3)
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        thresh = cv2.bitwise_not(thresh)
+        kernel = np.ones((3, 3), np.uint8)
+        return cv2.dilate(thresh, kernel, iterations=1)
+        
+    def prep_aggressive(img):
+        blurred = cv2.GaussianBlur(img, (11, 11), 0)
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, 3)
+        thresh = cv2.bitwise_not(thresh)
+        kernel = np.ones((5, 5), np.uint8)
+        return cv2.dilate(thresh, kernel, iterations=2)
+        
+    def prep_otsu(img):
+        blurred = cv2.GaussianBlur(img, (7, 7), 3)
+        _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+        kernel = np.ones((3, 3), np.uint8)
+        return cv2.dilate(thresh, kernel, iterations=1)
 
-    # Adaptive threshold to pull out the grid lines
-    thresh = cv2.adaptiveThreshold(
-        blurred, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2,
-    )
-    thresh = cv2.bitwise_not(thresh)
-
-    # Light dilation to connect broken grid lines
-    kernel = np.ones((3, 3), np.uint8)
-    thresh = cv2.dilate(thresh, kernel, iterations=1)
-
-    # Find external contours, sorted largest first
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
-
-    puzzleCnt = None
+    strategies = [prep_standard, prep_aggressive, prep_otsu]
     total_area = image.shape[0] * image.shape[1]
+    puzzleCnt = None
 
-    for c in cnts:
-        area = cv2.contourArea(c)
-        if area < (total_area * 0.1):
-            continue
+    for strategy in strategies:
+        thresh = strategy(gray)
+        cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
 
-        peri = cv2.arcLength(c, True)
-        found_approx = None
-        for eps in [0.02, 0.03, 0.04, 0.05, 0.08]:
-            approx = cv2.approxPolyDP(c, eps * peri, True)
-            if len(approx) == 4:
-                found_approx = approx
-                break
+        for c in cnts:
+            area = cv2.contourArea(c)
+            if area < (total_area * 0.1):
+                continue
 
-        if found_approx is not None:
-            (x, y, w, h) = cv2.boundingRect(found_approx)
-            ar = w / float(h)
-            if 0.5 <= ar <= 2.0:
-                puzzleCnt = found_approx
-                break
+            peri = cv2.arcLength(c, True)
+            found_approx = None
+            for eps in [0.02, 0.03, 0.04, 0.05, 0.08]:
+                approx = cv2.approxPolyDP(c, eps * peri, True)
+                if 4 <= len(approx) <= 8:
+                    pts = approx.reshape(len(approx), 2)
+                    rect = np.zeros((4, 2), dtype="float32")
+                    s = pts.sum(axis=1)
+                    rect[0] = pts[np.argmin(s)]
+                    rect[2] = pts[np.argmax(s)]
+                    diff = np.diff(pts, axis=1)
+                    rect[1] = pts[np.argmin(diff)]
+                    rect[3] = pts[np.argmax(diff)]
+                    found_approx = rect
+                    break
+
+            if found_approx is not None:
+                (x, y, w, h) = cv2.boundingRect(found_approx)
+                ar = w / float(h)
+                if 0.5 <= ar <= 2.0:
+                    puzzleCnt = found_approx
+                    break
+        
+        if puzzleCnt is not None:
+            break
 
     if puzzleCnt is None:
-        raise Exception("Could not find Sudoku grid in image")
+        if not rotation_retry:
+            rotated = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+            try:
+                return find_puzzle(rotated, rotation_retry=True)
+            except Exception:
+                raise Exception("Could not find Sudoku grid in image even after rotation")
+        else:
+            raise Exception("Could not find Sudoku grid in image")
 
     warped = four_point_transform(gray, puzzleCnt.reshape(4, 2))
     return warped, puzzleCnt
