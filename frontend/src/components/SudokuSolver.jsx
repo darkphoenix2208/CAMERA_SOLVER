@@ -138,6 +138,12 @@ export default function SudokuSolver({ onBack }) {
                 
                 const clues = detectedBoard.flat().filter(d => d !== 0).length;
 
+                if (clues < 17) {
+                    setStatus(`Align Sudoku in view... (${clues}/17 clues)`);
+                    setCorners(null);
+                    return;
+                }
+
                 setStatus(`Detected ${clues} clues. Solving...`);
                 
                 // Immediately solve
@@ -152,7 +158,7 @@ export default function SudokuSolver({ onBack }) {
                         setSolveTimeMs(solveRes.data.solve_time_ms);
                         setStatus("✅ Solved! AR Overlay active.");
                     } else {
-                        setStatus("Detected, but unsolvable.");
+                        setStatus("Detected, but unsolvable. Try bringing the camera closer.");
                         setCorners(null);
                     }
                 } catch (solveErr) {
