@@ -158,13 +158,13 @@ export default function SudokuSolver({ onBack }) {
                 } catch (solveErr) {
                     console.error("AXIOS ERROR IN /solve-sudoku POST:", solveErr);
                     if (solveErr.response) {
-                        console.error("Response data:", solveErr.response.data);
-                        console.error("Response status:", solveErr.response.status);
+                        setStatus(`Error: ${solveErr.response.data.error || 'Backend error'}`);
                     } else if (solveErr.request) {
-                        console.error("No response received. Request was:", solveErr.request);
+                        setStatus("Error: No response from server (Network/CORS error)");
                     } else {
-                        console.error("Error setting up request:", solveErr.message);
+                        setStatus(`Error: ${solveErr.message}`);
                     }
+                    setCorners(null);
                 }
             } else {
                 setStatus("Align Sudoku in view...");
