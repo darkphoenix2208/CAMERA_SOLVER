@@ -158,7 +158,8 @@ export default function SudokuSolver({ onBack }) {
                         setSolveTimeMs(solveRes.data.solve_time_ms);
                         setStatus("✅ Solved! AR Overlay active.");
                     } else {
-                        setStatus("Detected, but unsolvable. Try bringing the camera closer.");
+                        setBoard(detectedBoard);
+                        setStatus("Detected, but unsolvable. Please check the digits below.");
                         setCorners(null);
                     }
                 } catch (solveErr) {
@@ -199,23 +200,43 @@ export default function SudokuSolver({ onBack }) {
         }
     };
 
-    const renderGrid = (gridData, isSolution = false) => {
+    const renderGrid = (gridData, isSolution = false, editable = false) => {
         if (!gridData) return null;
         return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: '2px', background: '#374151', border: '2px solid #4b5563', padding: '4px', marginTop: '20px' }}>
                 {gridData.map((row, rIdx) => 
                     row.map((cell, cIdx) => {
-                        // If it's a solution grid, color the provided clues differently from the solved ones
-                        const isOriginalClue = board && board[rIdx][cIdx] !== 0;
+                        const isOriginalClue = board && board[rIdx][cIdx] !== 0 && !editable;
                         const color = cell === 0 ? 'transparent' : (isSolution && !isOriginalClue ? '#10b981' : '#fff');
                         
+                        const cellStyle = {
+                            width: '30px', height: '30px', background: '#1f2937', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                            fontWeight: 'bold', color: color, fontSize: '1.2rem',
+                            borderRight: (cIdx === 2 || cIdx === 5) ? '2px solid #4b5563' : 'none',
+                            borderBottom: (rIdx === 2 || rIdx === 5) ? '2px solid #4b5563' : 'none',
+                            textAlign: 'center', outline: 'none', border: 'none', caretColor: '#10b981'
+                        };
+
+                        if (editable) {
+                            return (
+                                <input 
+                                    key={`${rIdx}-${cIdx}`}
+                                    type="text"
+                                    maxLength="1"
+                                    value={cell !== 0 ? cell : ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/[^1-9]/g, '');
+                                        const newBoard = [...board];
+                                        newBoard[rIdx][cIdx] = val ? parseInt(val) : 0;
+                                        setBoard(newBoard);
+                                    }}
+                                    style={{...cellStyle, background: cell === 0 ? '#374151' : '#1f2937', color: '#fff'}}
+                                />
+                            );
+                        }
+
                         return (
-                            <div className="sudoku-cell" key={`${rIdx}-${cIdx}`} style={{
-                                width: '30px', height: '30px', background: '#1f2937', display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                fontWeight: 'bold', color: color, fontSize: '1.2rem',
-                                borderRight: (cIdx === 2 || cIdx === 5) ? '2px solid #4b5563' : 'none',
-                                borderBottom: (rIdx === 2 || rIdx === 5) ? '2px solid #4b5563' : 'none',
-                            }}>
+                            <div className="sudoku-cell" key={`${rIdx}-${cIdx}`} style={cellStyle}>
                                 {cell !== 0 ? cell : ''}
                             </div>
                         )
@@ -271,6 +292,28 @@ export default function SudokuSolver({ onBack }) {
             {mode === 'camera' && !solution && isScanning && (
                 <div style={{ width: '80%', height: '8px', background: '#374151', borderRadius: '4px', marginTop: '5px', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${Math.round(confidence * 100)}%`, background: confidence > 0.8 ? '#10b981' : (confidence > 0.4 ? '#f59e0b' : '#ef4444'), transition: 'width 0.3s' }}></div>
+                </div>
+            )}
+
+            {mode === 'upload' && board && !solution && (
+                <div style={{ marginTop: '20px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <h3 style={{ color: '#ef4444' }}>Please correct any mistakes:</h3>
+                    {renderGrid(board, false, true)}
+                    <button className="btn-primary" style={{...primaryBtnStyle, marginTop: '15px'}} onClick={async () => {
+                        setStatus("Solving corrected board...");
+                        try {
+                            const solveRes = await api.post('/solve-sudoku', { board: board });
+                            if (solveRes.data.success) {
+                                setSolution(solveRes.data.solution);
+                                setSolveTimeMs(solveRes.data.solve_time_ms);
+                                setStatus("✅ Solved!");
+                            } else {
+                                setStatus("Still unsolvable. Please check the digits carefully.");
+                            }
+                        } catch(e) {
+                            setStatus("Error communicating with server.");
+                        }
+                    }}>Solve Again</button>
                 </div>
             )}
 
